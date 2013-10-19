@@ -596,6 +596,20 @@ class App(object):
                         raise RuntimeError('Archive name not specified. Use --name')
                     name = os.path.basename(full_name)
 
+                if self.args.ignore_existing: # similar to rsync --ignore-existing
+                    try:
+                        last_seen = self.cache.get_archive_last_seen(
+                            self.args.vault, name)
+                    except KeyError:
+                        last_seen = None
+                    # unlike checkpresent or check, ignore existing
+                    # considers the presence in the cache as existance
+                    # regardless of age
+                    if last_seen:
+                        if not self.args.quiet:
+                            print("Skipping file '%s' that exists in cache" % name, file=sys.stderr)
+                        continue
+
                 # Basically a copy from boto.glacier.vault, but supports
                 # printing progress and storing the final hash
                 if upload_file == sys.stdin:
@@ -917,6 +931,8 @@ class App(object):
         archive_upload_subparser.add_argument('files', nargs="+")
         archive_upload_subparser.add_argument('--name')
         archive_upload_subparser.add_argument('--quiet',
+                                              action='store_true')
+        archive_upload_subparser.add_argument('--ignore-existing',
                                               action='store_true')
         archive_retrieve_subparser = archive_subparser.add_parser('retrieve')
         archive_retrieve_subparser.set_defaults(func=self.archive_retrieve)
