@@ -138,6 +138,7 @@ class Cache(object):
         table_name = Cache.Archive.__tablename__
         res = self.engine.execute('PRAGMA table_info(%s)' % (table_name))
         has_sha256hash = False
+        if not res.returns_rows: return
         for r in res:
             if r[1] == "sha256hash":
                 has_sha256hash = True
